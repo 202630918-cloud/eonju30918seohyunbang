@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>시간함수 - 자투리 시간 밀도 극대화</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex justify-center p-3 sm:p-6">
+  <div class="w-full max-w-md bg-white rounded-3xl shadow-xl p-6 flex flex-col gap-6 border border-slate-200">
+    
+    <!-- 헤더 -->
+    <header class="text-center border-b pb-4">
+      <div class="inline-block bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold mb-1">f(t) = Max Efficiency</div>
+      <h1 class="text-2xl font-black text-indigo-600 tracking-tight">시간함수</h1>
+      <p class="text-xs text-slate-500 mt-1">적은 시간도 함수처럼 크게! 자투리 시간 밀도 생성기</p>
+    </header>
+
+    <!-- STEP 1: 스케줄 입력 -->
+    <section class="space-y-3">
+      <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+        <span class="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs">1</span>
+        오늘의 스케줄 입력 (최대 3개)
+      </h2>
+
+      <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5">
+        <label class="block text-xs font-semibold text-slate-600">🏫 하교 시간</label>
+        <input type="time" id="schoolLeave" value="15:30" onchange="renderLocationSteps()" class="w-full border rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+
+      <div id="academyList" class="space-y-2"></div>
+
+      <button type="button" id="addAcademyBtn" onclick="addAcademyInput()" class="w-full py-2.5 border-2 border-dashed border-indigo-300 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-50 transition flex items-center justify-center gap-1">
+        <i class="fa-solid fa-plus"></i> 학원 일정 추가하기 (<span id="academyCount">0</span>/3)
+      </button>
+    </section>
+
+    <!-- STEP 2: 할 일 선택 (최소 2개 이상) -->
+    <section class="space-y-2">
+      <div class="flex justify-between items-center">
+        <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+          <span class="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs">2</span>
+          해야 할 일 & 하고 싶은 활동
+        </h2>
+        <span class="text-[11px] text-indigo-600 font-bold">* 2개 이상 필수 선택</span>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-2" id="todoContainer">
+        <button type="button" onclick="toggleSelect(this)" data-type="task" data-name="수학 숙제" data-time="40" class="todo-btn border border-slate-200 p-2.5 rounded-xl text-xs text-left hover:border-indigo-400 transition flex justify-between items-center">
+          <span>📝 수학 숙제</span> <span class="text-[10px] text-slate-400">40분</span>
+        </button>
+        <button type="button" onclick="toggleSelect(this)" data-type="task" data-name="국어 숙제" data-time="30" class="todo-btn border border-slate-200 p-2.5 rounded-xl text-xs text-left hover:border-indigo-400 transition flex justify-between items-center">
+          <span>📖 국어 숙제</span> <span class="text-[10px] text-slate-400">30분</span>
+        </button>
+        <button type="button" onclick="toggleSelect(this)" data-type="task" data-name="영단어 암기" data-time="15" class="todo-btn border border-slate-200 p-2.5 rounded-xl text-xs text-left hover:border-indigo-400 transition flex justify-between items-center">
+          <span>🔤 영단어 암기</span> <span class="text-[10px] text-slate-400">15분</span>
+        </button>
+        <button type="button" onclick="toggleSelect(this)" data-type="task" data-name="독서" data-time="20" class="todo-btn border border-slate-200 p-2.5 rounded-xl text-xs text-left hover:border-indigo-400 transition flex justify-between items-center">
+          <span>📚 독서</span> <span class="text-[10px] text-slate-400">20분</span>
+        </button>
+        <button type="button" onclick="toggleSelect(this)" data-type="task" data-name="게임" data-time="30" class="todo-btn border border-slate-200 p-2.5 rounded-xl text-xs text-left hover:border-indigo-400 transition flex justify-between items-center">
+          <span>🎮 게임</span> <span class="text-[10px] text-slate-400">30분</span>
+        </button>
+        <button type="button" onclick="toggleSelect(this)" data-type="task" data-name="OTT 시청" data-time="25" class="todo-btn border border-slate-200 p-2.5 rounded-xl text-xs text-left hover:border-indigo-400 transition flex justify-between items-center">
+          <span>🎬 OTT 시청</span> <span class="text-[10px] text-slate-400">25분</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- STEP 3: 자투리 시간 구간별 장소 선택 -->
+    <section class="space-y-2">
+      <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+        <span class="bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs">3</span>
+        구간별 머무는 장소 지정
+      </h2>
+      <div id="locationStepsContainer" class="space-y-3"></div>
+    </section>
+
+    <!-- STEP 4: 분석 버튼 -->
+    <button type="button" onclick="analyzeSchedule()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-200 transition transform active:scale-95 text-sm flex items-center justify-center gap-2">
+      <i class="fa-solid fa-wand-magic-sparkles"></i> AI 자투리 시간 최적화 분석
+    </button>
+
+    <!-- STEP 4: 결과 출력 -->
+    <section id="resultSection" class="hidden border-t border-slate-100 pt-4 space-y-3">
+      <h2 class="text-sm font-bold text-slate-800">⚡ AI 분석 최적 밀도 스케줄</h2>
+      <div id="resultContent" class="space-y-3"></div>
+    </section>
+
+  </div>
+
+  <script>
+    let academyIdCounter = 0;
+
+    window.onload = () => {
+      addAcademyInput("16:30", "18:00");
+    };
+
+    function addAcademyInput(defaultStart = "17:00", defaultEnd = "18:30") {
+      const currentItems = document.querySelectorAll('.academy-item');
+      if (currentItems.length >= 3) return;
+
+      academyIdCounter++;
+      const container = document.getElementById('academyList');
+      const div = document.createElement('div');
+      div.className = "bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 relative academy-item";
+      div.id = `academy-${academyIdCounter}`;
+      
+      div.innerHTML = `
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold text-indigo-600 academy-label">🎒 학원 Schedule</span>
+          <button type="button" onclick="removeAcademy('${academyIdCounter}')" class="text-xs text-rose-500 font-semibold hover:underline">삭제</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-0.5">시작 시간</label>
+            <input type="time" value="${defaultStart}" onchange="renderLocationSteps()" class="academy-start w-full border rounded-lg p-1.5 bg-white outline-none">
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-0.5">종료 시간</label>
+            <input type="time" value="${defaultEnd}" onchange="renderLocationSteps()" class="academy-end w-full border rounded-lg p-1.5 bg-white outline-none">
+          </div>
+        </div>
+      `;
+      container.appendChild(div);
+      updateAcademyUI();
+      renderLocationSteps();
+    }
+
+    function removeAcademy(id) {
+      const item = document.getElementById(`academy-${id}`);
+      if (item) {
+        item.remove();
+        updateAcademyUI();
+        renderLocationSteps();
+      }
+    }
+
+    function updateAcademyUI() {
+      const items = document.querySelectorAll('.academy-item');
+      items.forEach((item, idx) => {
+        const label = item.querySelector('.academy-label');
+        if(label) label.innerText = `🎒 학원 ${idx + 1}`;
+      });
+
+      document.getElementById('academyCount').innerText = items.length;
+      const btn = document.getElementById('addAcademyBtn');
+      if (items.length >= 3) {
+        btn.classList.add('hidden');
+      } else {
+        btn.classList.remove('hidden');
+      }
+    }
+
+    function toggleSelect(el) {
+      el.classList.toggle('bg-indigo-50');
+      el.classList.toggle('border-indigo-600');
+      el.classList.toggle('text-indigo-600');
+      el.classList.toggle('font-bold');
+      el.classList.toggle('selected');
+    }
+
+    function timeToMinutes(timeStr) {
+      if(!timeStr) return 0;
+      const [h, m] = timeStr.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function minutesToTime(mins) {
+      const h = Math.floor(mins / 60).toString().padStart(2, '0');
+      const m = (mins % 60).toString().padStart(2, '0');
+      return `${h}:${m}`;
+    }
+
+    function renderLocationSteps() {
+      const container = document.getElementById('locationStepsContainer');
+      container.innerHTML = '';
+
+      const schoolLeave = timeToMinutes(document.getElementById('schoolLeave').value);
+      const academies = [];
+      
+      document.querySelectorAll('.academy-item').forEach(item => {
+        const start = timeToMinutes(item.querySelector('.academy-start').value);
+        const end = timeToMinutes(item.querySelector('.academy-end').value);
+        if (start > 0 && end > 0 && start < end) {
+          academies.push({ start, end });
+        }
+      });
+
+      academies.sort((a, b) => a.start - b.start);
+
+      let currentTime = schoolLeave;
+      let gapIndex = 0;
+
+      academies.forEach((acc, index) => {
+        if (acc.start > currentTime) {
+          gapIndex++;
+          const title = index === 0 ? "하교 ➔ 첫 학원 사이" : `학원 ${index} ➔ 학원 ${index+1} 사이`;
+          
+          const stepDiv = document.createElement('div');
+          stepDiv.className = "bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 gap-loc-group";
+          stepDiv.innerHTML = `
+            <div class="text-xs font-bold text-slate-700 flex justify-between items-center">
+              <span>📍 구간 ${gapIndex}: ${title}</span>
+              <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[11px] font-semibold">${minutesToTime(currentTime)} ~ ${minutesToTime(acc.start)}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button type="button" onclick="selectGapLocation(this)" data-loc="스카/독서실" class="gap-loc-btn border border-slate-200 py-1.5 rounded-lg text-xs hover:border-indigo-400 bg-white">스카/독서실</button>
+              <button type="button" onclick="selectGapLocation(this)" data-loc="집" class="gap-loc-btn border border-slate-200 py-1.5 rounded-lg text-xs hover:border-indigo-400 bg-white">집</button>
+              <button type="button" onclick="selectGapLocation(this)" data-loc="이동 중/카페" class="gap-loc-btn border border-slate-200 py-1.5 rounded-lg text-xs hover:border-indigo-400 bg-white">이동중/카페</button>
+            </div>
+          `;
+          container.appendChild(stepDiv);
+
+          const firstBtn = stepDiv.querySelector('.gap-loc-btn');
+          if(firstBtn) selectGapLocation(firstBtn);
+        }
+        currentTime = Math.max(currentTime, acc.end);
+      });
+
+      if (gapIndex === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-2 bg-slate-50 rounded-xl border border-dashed">입력된 스케줄 사이에 활용 가능한 자투리 시간이 없습니다.</p>`;
+      }
+    }
+
+    function selectGapLocation(el) {
+      const parent = el.closest('.gap-loc-group');
+      parent.querySelectorAll('.gap-loc-btn').forEach(btn => {
+        btn.classList.remove('bg-indigo-50', 'border-indigo-600', 'text-indigo-600', 'font-bold');
+        btn.classList.add('bg-white');
+      });
+      el.classList.remove('bg-white');
+      el.classList.add('bg-indigo-50', 'border-indigo-600', 'text-indigo-600', 'font-bold');
+    }
+
+    function analyzeSchedule() {
+      const selectedTasks = [];
+      document.querySelectorAll('.todo-btn.selected').forEach(btn => {
+        selectedTasks.push({
+          name: btn.getAttribute('data-name'),
+          time: parseInt(btn.getAttribute('data-time'))
+        });
+      });
+
+      // 2개 이상 필수 조건 검증
+      if (selectedTasks.length < 2) {
+        alert('해야 할 일이나 하고 싶은 활동을 최소 2개 이상 선택해주세요!');
+        return;
+      }
+
+      const schoolLeave = timeToMinutes(document.getElementById('schoolLeave').value);
+      const academies = [];
+      document.querySelectorAll('.academy-item').forEach(item => {
+        const start = timeToMinutes(item.querySelector('.academy-start').value);
+        const end = timeToMinutes(item.querySelector('.academy-end').value);
+        if (start > 0 && end > 0 && start < end) {
+          academies.push({ start, end });
+        }
+      });
+
+      academies.sort((a, b) => a.start - b.start);
+
+      const freeSlots = [];
+      let currentTime = schoolLeave;
+
+      const gapGroups = document.querySelectorAll('.gap-loc-group');
+      let gapIdx = 0;
+
+      academies.forEach((acc, index) => {
+        if (acc.start > currentTime) {
+          const gap = acc.start - currentTime;
+          let selectedLoc = "집";
+          
+          if(gapGroups[gapIdx]) {
+            const selectedBtn = gapGroups[gapIdx].querySelector('.gap-loc-btn.border-indigo-600');
+            if(selectedBtn) selectedLoc = selectedBtn.getAttribute('data-loc');
+          }
+
+          freeSlots.push({
+            title: index === 0 ? "하교 후 첫 학원 전" : `학원 ${index} ➔ 학원 ${index+1} 사이`,
+            start: currentTime,
+            end: acc.start,
+            duration: gap,
+            location: selectedLoc
+          });
+          gapIdx++;
+        }
+        currentTime = Math.max(currentTime, acc.end);
+      });
+
+      const resultSection = document.getElementById('resultSection');
+      const resultContent = document.getElementById('resultContent');
+      resultContent.innerHTML = '';
+
+      if (freeSlots.length === 0) {
+        resultContent.innerHTML = `<div class="p-4 bg-amber-50 text-amber-800 text-xs rounded-xl border border-amber-200">입력된 스케줄 사이에 활용 가능한 자투리 시간이 없습니다. 시간대를 확인해 보세요!</div>`;
+        resultSection.classList.remove('hidden');
+        return;
+      }
+
+      let taskIdx = 0;
+      freeSlots.forEach(slot => {
+        let assignedTask = "휴식 및 자유시간";
+        let matchReason = "시간이 짧거나 지정된 활동에 맞는 시간 배정이 어려워 휴식을 추천합니다.";
+
+        if (taskIdx < selectedTasks.length) {
+          const currentTask = selectedTasks[taskIdx];
+          if (slot.duration >= currentTask.time) {
+            assignedTask = `${currentTask.name} (${currentTask.time}분 소요)`;
+            
+            if (currentTask.name.includes("숙제")) {
+              matchReason = `${slot.location} 장소의 환경과 몰입 시간(${slot.duration}분)이 확보되어 숙제 해결에 최적입니다.`;
+            } else if (currentTask.name.includes("OTT") || currentTask.name.includes("게임")) {
+              matchReason = `다음 일정 전 ${slot.location}에서 스트레스를 해소하기에 딱 좋은 시간입니다.`;
+            } else {
+              matchReason = `${slot.duration}분 동안 ${slot.location} 환경에서 높은 밀도로 집중할 수 있습니다.`;
+            }
+            taskIdx++;
+          }
+        }
+
+        const hours = Math.floor(slot.duration / 60);
+        const mins = slot.duration % 60;
+        const durationText = hours > 0 ? `${hours}시간 ${mins}분` : `${mins}분`;
+
+        const card = document.createElement('div');
+        card.className = "bg-indigo-50/60 border border-indigo-100 p-3.5 rounded-2xl space-y-1.5 text-xs";
+        card.innerHTML = `
+          <div class="flex justify-between items-center text-indigo-900 font-bold">
+            <span>📌 ${slot.title}</span>
+            <span class="bg-indigo-200 text-indigo-800 px-2 py-0.5 rounded-md text-[10px]">${durationText} 확보</span>
+          </div>
+          <div class="text-slate-500 text-[11px]">
+            🕒 시간대: ${minutesToTime(slot.start)} ~ ${minutesToTime(slot.end)} | 📍 지정 장소: <strong>${slot.location}</strong>
+          </div>
+          <div class="bg-white p-2.5 rounded-xl border border-indigo-100 text-slate-700">
+            <div class="font-bold text-indigo-600 mb-0.5">💡 추천 활동: ${assignedTask}</div>
+            <div class="text-[11px] text-slate-500">${matchReason}</div>
+          </div>
+        `;
+        resultContent.appendChild(card);
+      });
+
+      resultSection.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
